@@ -1201,10 +1201,23 @@ function TopicDetail({topic,format,catName,onBack,onStageChange,onDelete,onEdit,
   const [savedContent, setSavedContent] = useState({});
   useEffect(() => {
     setSavedContent({});
+    setMasterShort({ text:"", version:0 });
+    setMasterLong({ text:"", version:0 });
+    setElShort({ text:"", version:0 });
+    setElLong({ text:"", version:0 });
     fetchTopicContent(topic.id).then(rows => {
       const map = {};
       rows.forEach(r => { map[`${r.format}_${r.section_key}`] = r; });
       setSavedContent(map);
+      // Restore master + EL state so derived sections unlock immediately
+      const shortMaster = map['short_script60'];
+      const longMaster  = map['long_script'];
+      const shortEl     = map['short_elevenlabs'];
+      const longEl      = map['long_elevenlabs'];
+      if (shortMaster?.content) setMasterShort({ text: shortMaster.content, version: shortMaster.version ?? 1 });
+      if (longMaster?.content)  setMasterLong({ text: longMaster.content,   version: longMaster.version ?? 1 });
+      if (shortEl?.content)     setElShort({ text: shortEl.content,         version: shortEl.version ?? 1 });
+      if (longEl?.content)      setElLong({ text: longEl.content,           version: longEl.version ?? 1 });
     });
   }, [topic.id]);
 
