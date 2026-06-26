@@ -638,8 +638,10 @@ function GenSection({
   elScript, elVersion,
   onMasterGenerated, onElGenerated,
   onAppendInstruction,
-  initialOut,      // content loaded from Supabase
-  onContentSaved,  // (content, elVer) => void
+  initialOut,        // content loaded from Supabase
+  initialElStyle,    // "v2" | "v3" — saved EL prompt style
+  onContentSaved,    // (content, elVer) => void
+  onElStyleSaved,    // (style: "v2"|"v3") => void
 }) {
   const [out, setOut]               = useState("");
   const [loading, setLoading]       = useState(false);
@@ -649,7 +651,7 @@ function GenSection({
   const [draft, setDraft]           = useState("");
   const [copied, setCopied]         = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
-  const [elVoiceVer, setElVoiceVer] = useState("v3");
+  const [elVoiceVer, setElVoiceVer] = useState(initialElStyle || "v3");
 
   // Initialise from Supabase-saved content when topic opens
   useEffect(() => {
@@ -703,7 +705,9 @@ function GenSection({
     setGenMeta({ date: dateStr, instructionsSnapshot: instructions, sourceVersion, elVer: isElSection ? elVoiceVer : undefined });
     if (isMaster)    onMasterGenerated?.(full, masterVersion + 1);
     if (isElSection) onElGenerated?.(full, elVersion + 1);
-    onContentSaved?.(full, isElSection ? elVoiceVer : undefined);
+    onContentSaved?.(full, null);
+    // Save EL prompt style (v2/v3) as a separate lightweight key so it survives reload
+    if (isElSection) onElStyleSaved?.(elVoiceVer);
     setLoading(false);
   };
 
@@ -1344,7 +1348,9 @@ function TopicDetail({topic,format,catName,onBack,onStageChange,onDelete,onEdit,
                 onElGenerated={handleElGenerated}
                 onAppendInstruction={onAppendInstruction}
                 initialOut={savedContent[`${tab}_${sec.key}`]?.content || ""}
+                initialElStyle={sec.key === 'elevenlabs' ? (savedContent[`${tab}_elevenlabs_style`]?.content || null) : undefined}
                 onContentSaved={(content, elVer) => handleContentSaved(tab, sec.key, content, elVer)}
+                onElStyleSaved={sec.key === 'elevenlabs' ? (style) => handleContentSaved(tab, 'elevenlabs_style', style, null) : undefined}
               />
             </div>
           );
