@@ -34,11 +34,11 @@ export async function generateScript({ videoType, inputData }, onChunk) {
   return parseStream(r, onChunk)
 }
 
-export async function generateVoice(script, jobName) {
+export async function generateVoice(script, jobName, voiceType = 'default') {
   const r = await fetch('/api/generate-voice', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ script, jobName }),
+    body: JSON.stringify({ script, jobName, voiceType }),
   })
   if (!r.ok) {
     const e = await r.json().catch(() => ({ error: 'Voice generation failed' }))

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { createJob } from '../api/jobs.js'
 
 const VIDEO_TYPES = [
@@ -50,20 +50,31 @@ const inputStyle = {
 }
 
 export default function NewJob() {
-  const [videoType, setVideoType] = useState('')
+  const [searchParams] = useSearchParams()
+  const [videoType, setVideoType] = useState(searchParams.get('type') || '')
   const [inputData, setInputData] = useState({
     // listing reel
-    address: '', price: '', beds: '', baths: '',
-    highlights: ['', '', ''],
+    address: searchParams.get('address') || '',
+    price: searchParams.get('price') || '',
+    beds: searchParams.get('beds') || '',
+    baths: searchParams.get('baths') || '',
+    highlights: [
+      searchParams.get('h1') || '',
+      searchParams.get('h2') || '',
+      searchParams.get('h3') || '',
+    ],
     // market update
-    area: '', stat: '', insight: '',
+    area: searchParams.get('area') || '', stat: '', insight: '',
     // neighbourhood guide
     highlight1: '', highlight2: '', highlight3: '',
     // open house
     datetime: '',
     // shared
-    audience: AUDIENCES[0],
+    audience: searchParams.get('audience') || AUDIENCES[0],
   })
+
+  // Show a pre-fill notice if we came from TC Ops
+  const fromTCOps = searchParams.get('source') === 'tcops'
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
@@ -113,6 +124,11 @@ export default function NewJob() {
         </button>
         <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>New Video Job</h1>
         <p style={{ color: '#64748B', fontSize: 14 }}>Fill in the details and AI will write your script in the next step.</p>
+        {fromTCOps && (
+          <div style={{ background: '#F0FDFC', border: '1px solid #99F6E4', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#0F766E', fontWeight: 500 }}>
+            ✅ Pre-filled from TC Ops request — review and adjust as needed.
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit}>

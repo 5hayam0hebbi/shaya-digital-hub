@@ -225,8 +225,12 @@ function extractAvatarLines(script) {
 }
 
 app.post('/api/generate-voice', async (req, res) => {
-  const { script, jobName } = req.body
-  const voiceId = process.env.ELEVENLABS_VOICE_ID
+  const { script, jobName, voiceType } = req.body
+  // voiceType='personal' uses your own content-library voice clone
+  // voiceType='default' (or omitted) uses the client/video-jobs voice
+  const voiceId = voiceType === 'personal'
+    ? (process.env.ELEVENLABS_VOICE_ID_PERSONAL || process.env.ELEVENLABS_VOICE_ID)
+    : process.env.ELEVENLABS_VOICE_ID
   const apiKey = process.env.ELEVENLABS_API_KEY
 
   if (!apiKey || !voiceId)

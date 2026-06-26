@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { fetchTopics, upsertTopic, deleteTopic, fetchTopicContent, saveContent } from "./api.js";
+import ProductionPanel from "./components/ProductionPanel.jsx";
 
 // ─── BRAND ────────────────────────────────────────────────────────────────────
 const BRAND = {
@@ -1331,6 +1332,15 @@ function TopicDetail({topic,format,catName,onBack,onStageChange,onDelete,onEdit,
           );
         })}
       </div>
+
+      {/* ── Production Workflow (inline, below content sections) ── */}
+      <ProductionPanel
+        topic={topic}
+        format={tab}
+        masterScript={master.text}
+        savedContent={savedContent}
+        onContentSaved={(format, sectionKey, content, elVer) => handleContentSaved(format, sectionKey, content, elVer)}
+      />
     </div>
   );
 }
@@ -2212,7 +2222,7 @@ export default function ContentHub(){
   const tc=TAB_CFG[tab];
 
   return(
-    <div style={{padding:"1rem 0",maxWidth:740,margin:"0 auto",position:"relative"}}>
+    <div style={{padding:"1rem 2rem",maxWidth:1100,margin:"0 auto",position:"relative"}}>
       <style>{`
         @keyframes spin {to{transform:rotate(360deg)}}
         @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
