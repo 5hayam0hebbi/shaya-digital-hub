@@ -12,7 +12,7 @@ export default function App() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#F8FAFC' }}>
       <Sidebar />
-      <main style={{ marginLeft: SIDEBAR_W, flex: 1, minHeight: '100vh', padding: '32px 0' }}>
+      <main style={{ marginLeft: SIDEBAR_W, width: `calc(100vw - ${SIDEBAR_W}px)`, minHeight: '100vh', padding: '32px 0' }}>
         <Routes>
           <Route path="/" element={<Navigate to="/content-hub" replace />} />
           <Route path="/content-hub" element={<ContentHub />} />
