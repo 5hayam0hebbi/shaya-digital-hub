@@ -138,9 +138,9 @@ export default function Settings() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', fontSize: 13 }}>
           {[
             ['Agent', 'Shaya Mohebbi, REALTOR®'],
-            ['Team', 'Kaizen Real Estate Team at eXp Realty'],
-            ['Phone', '647-370-8885'],
-            ['Website', 'kaizenrealestate.ca'],
+            ['Brand', 'Shaya Digital · eXp Realty, Brokerage'],
+            ['Phone', '647-370-9588'],
+            ['Website', 'shayamohebbi.com'],
             ['Market', 'York Region / Greater Toronto Area'],
             ['Voice tone', 'Warm, trustworthy, educational'],
           ].map(([k, v]) => (

@@ -2222,7 +2222,7 @@ export default function ContentHub(){
   const tc=TAB_CFG[tab];
 
   return(
-    <div style={{padding:"1rem 2rem",maxWidth:1100,margin:"0 auto",position:"relative"}}>
+    <div style={{padding:"1rem 2rem",position:"relative"}}>
       <style>{`
         @keyframes spin {to{transform:rotate(360deg)}}
         @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}

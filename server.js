@@ -147,7 +147,7 @@ function buildScriptPrompt(videoType, inputData) {
   const SYSTEM = `You are a real estate video script writer for Shaya Mohebbi, REALTOR® at eXp Realty, serving York Region and the Greater Toronto Area.
 
 Brand voice: Warm, trustworthy, educational, conversational. Never salesy or pushy.
-Phone: 647-370-8885 | Website: shayamohebbi.com
+Phone: 647-370-9588 | Website: shayamohebbi.com
 
 STRICT FORMAT — every single line MUST be exactly one of these three formats with no deviations:
 [AVATAR - ON CAMERA]: "spoken words in double quotes"
@@ -159,7 +159,7 @@ Rules:
 - Use "you" language — speak directly to the viewer like a trusted friend
 - B-ROLL CUEs must be specific: include location context (York Region / GTA suburb), lighting, action
 - Never invent statistics — only use stats the user has provided
-- End with a soft CTA: "DM me", "visit shayamohebbi.com", or "call or text 647-370-8885"
+- End with a soft CTA: "DM me", "visit shayamohebbi.com", or "call or text 647-370-9588"
 - No filler phrases like "In conclusion" or "As you can see"`
 
   const prompts = {
