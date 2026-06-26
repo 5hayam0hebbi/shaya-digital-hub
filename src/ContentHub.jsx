@@ -51,9 +51,14 @@ const CAT_DEFAULTS = {
 
 
 // ─── TOPIC DATA ───────────────────────────────────────────────────────────────
-function makeId() { return "t_" + Math.random().toString(36).slice(2,9); }
+// Stable deterministic ID so saved content survives page reloads
+function makeId(title) {
+  let h = 5381;
+  for (let i = 0; i < title.length; i++) h = Math.imul((h << 5) + h, 1) ^ title.charCodeAt(i);
+  return "t_" + (h >>> 0).toString(36);
+}
 function T(title, hook, audience, pillar) {
-  return { id:makeId(), title, hook, audience, pillar, stage:"not_started" };
+  return { id:makeId(title), title, hook, audience, pillar, stage:"not_started" };
 }
 
 const SHORT_TOPICS = {
@@ -2192,7 +2197,17 @@ export default function ContentHub(){
   // Load persisted topics from Supabase on mount — overrides hardcoded defaults
   useEffect(() => {
     fetchTopics().then(rows => {
-      if (!rows.length) return;
+      if (!rows.length) {
+        // Seed Supabase with the stable hardcoded topics so IDs persist
+        const allShort = Object.entries(SHORT_TOPICS).flatMap(([cat, topics]) =>
+          topics.map(t => ({ ...t, format: 'short', category: cat }))
+        );
+        const allLong = Object.entries(LONG_TOPICS).flatMap(([cat, topics]) =>
+          topics.map(t => ({ ...t, format: 'long', category: cat }))
+        );
+        [...allShort, ...allLong].forEach(t => upsertTopic(t, t.format, t.category));
+        return;
+      }
       const s={}, l={};
       rows.forEach(t => {
         const target = t.format==="short" ? s : l;
