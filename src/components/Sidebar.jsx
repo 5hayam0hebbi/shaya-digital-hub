@@ -1,8 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: '▦', exact: true },
-  { to: '/settings', label: 'Settings', icon: '⚙' },
+  { to: '/content-hub', label: 'Content Library', icon: '📚', exact: false },
+  { to: '/video-jobs', label: 'Video Jobs', icon: '🎬', exact: false },
+  { to: '/settings', label: 'Settings', icon: '⚙', exact: false },
 ]
 
 const S = {
@@ -105,11 +106,11 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <button style={S.newBtn} onClick={() => navigate('/job/new')}
+      <button style={S.newBtn} onClick={() => navigate('/video-jobs')}
         onMouseOver={e => e.currentTarget.style.background = '#00a396'}
         onMouseOut={e => e.currentTarget.style.background = '#00B4A6'}
       >
-        + New Video Job
+        🎬 Video Jobs
       </button>
 
       <div style={S.footer}>
