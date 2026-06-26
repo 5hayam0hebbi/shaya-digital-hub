@@ -106,16 +106,9 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <button style={S.newBtn} onClick={() => navigate('/video-jobs')}
-        onMouseOver={e => e.currentTarget.style.background = '#00a396'}
-        onMouseOut={e => e.currentTarget.style.background = '#00B4A6'}
-      >
-        🎬 Video Jobs
-      </button>
-
       <div style={S.footer}>
-        Kaizen Real Estate Team<br />
-        eXp Realty · York Region
+        Shaya Digital<br />
+        York Region · GTA
       </div>
     </aside>
   )
