@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react'
-import { generateVoice, generateEditGuide } from '../api/generate.js'
+import { generateEditGuide } from '../api/generate.js'
 import { saveContent } from '../api.js'
 import ManualCard, { ManualStep } from './ManualCard.jsx'
+
+function formatForElevenLabs(text) {
+  if (!text) return ''
+  return text
+    .replace(/\.\s+/g, '.  ')
+    .replace(/,\s+/g, ',  ')
+    .replace(/\?\s+/g, '?  ')
+    .replace(/!\s+/g, '!  ')
+    .replace(/—/g, ' — ')
+    .replace(/\.\.\./g, '...  ')
+}
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function saved(savedContent, format, key) {
@@ -37,8 +48,7 @@ function Step({ n, label, done, active, onClick }) {
 export default function ProductionPanel({ topic, format, masterScript, savedContent, onContentSaved }) {
   const [open, setOpen] = useState(false)
   const [phase, setPhase] = useState('voice')
-  const [audioUrl, setAudioUrl] = useState(null)
-  const [genVoice, setGenVoice] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [genGuide, setGenGuide] = useState(false)
   const [guide, setGuide] = useState('')
   const [error, setError] = useState('')
@@ -59,15 +69,11 @@ export default function ProductionPanel({ topic, format, masterScript, savedCont
   const heygenPrompt = saved(savedContent, format, 'heygen')
   const higgsfieldPrompt = saved(savedContent, format, 'higgsfield_walk')
 
-  const handleGenerateVoice = async () => {
-    if (!elScript) { setError('Generate the ElevenLabs script first.'); return }
-    setGenVoice(true); setError('')
-    try {
-      // Pass voiceType=personal so server uses ELEVENLABS_VOICE_ID_PERSONAL
-      const url = await generateVoice(elScript, topic.title, 'personal')
-      setAudioUrl(url)
-    } catch (e) { setError(e.message) }
-    finally { setGenVoice(false) }
+  const handleCopyVoice = () => {
+    const text = formatForElevenLabs(elScript)
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true); setTimeout(() => setCopied(false), 2500)
+    })
   }
 
   const handleMarkVoiceDone = () => {
@@ -148,45 +154,52 @@ export default function ProductionPanel({ topic, format, masterScript, savedCont
             <div>
               <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Voice — ElevenLabs</h3>
               <p style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>
-                Generate your voice-over using your personal ElevenLabs voice clone.
+                Copy the script below and paste into ElevenLabs Text to Speech, then download the MP3.
               </p>
 
-              {elScript && (
+              {elScript ? (
                 <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 14px', marginBottom: 16 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Script for TTS ({elScript.split(' ').length} words)
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Script for TTS ({elScript.split(' ').filter(Boolean).length} words)
+                    </div>
+                    <button onClick={handleCopyVoice} style={{
+                      padding: '5px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      border: '1px solid #E2E8F0', background: copied ? '#ECFDF5' : '#fff',
+                      color: copied ? '#065F46' : '#374151', transition: 'all 0.2s',
+                    }}>
+                      {copied ? '✅ Copied!' : '📋 Copy Text'}
+                    </button>
                   </div>
-                  <p style={{ fontSize: 13, lineHeight: 1.7, color: '#374151', margin: 0, maxHeight: 140, overflow: 'auto' }}>{elScript}</p>
+                  <p style={{ fontSize: 13, lineHeight: 1.7, color: '#374151', margin: 0, maxHeight: 160, overflow: 'auto', whiteSpace: 'pre-wrap' }}>
+                    {formatForElevenLabs(elScript)}
+                  </p>
+                </div>
+              ) : (
+                <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#92400E' }}>
+                  ⚠ No ElevenLabs script found — generate it in the "ElevenLabs Voice Script" section above first.
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-                <button onClick={handleGenerateVoice} disabled={genVoice} style={btnOutline(genVoice)}>
-                  {genVoice ? '⟳ Generating...' : audioUrl ? '↺ Regenerate Voice' : '🎙 Generate Voice'}
-                </button>
-                <button onClick={handleMarkVoiceDone} style={btnTeal(false)}>
-                  {voiceDone ? '✓ Done — Next →' : 'Mark Done & Continue →'}
-                </button>
+              <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '12px 14px', marginBottom: 16, fontSize: 13 }}>
+                <div style={{ fontWeight: 600, color: '#1E40AF', marginBottom: 4 }}>💡 ElevenLabs Tips</div>
+                <ul style={{ paddingLeft: 16, color: '#1E3A8A', lineHeight: 1.8, margin: 0 }}>
+                  <li>Model: <strong>Eleven Multilingual v2</strong></li>
+                  <li>Stability: <strong>50%</strong> · Similarity: <strong>75%</strong> · Style: <strong>30%</strong></li>
+                  <li>Extra spaces after punctuation = natural pauses</li>
+                </ul>
               </div>
 
-              {audioUrl && (
-                <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#065F46', marginBottom: 10 }}>✅ Voice generated</div>
-                  <audio controls src={audioUrl} style={{ width: '100%', marginBottom: 10 }} />
-                  <a href={audioUrl} download={`${topic.title.replace(/[^a-z0-9]/gi, '_').slice(0, 40)}.mp3`}
-                    style={{ display: 'inline-block', padding: '7px 14px', background: '#10B981', color: '#fff', borderRadius: 7, fontSize: 13, fontWeight: 600 }}>
-                    ↓ Download MP3
-                  </a>
-                </div>
-              )}
+              <button onClick={handleMarkVoiceDone} style={{ ...btnTeal(false), marginBottom: 16 }}>
+                {voiceDone ? '✓ Done — Next →' : 'Voice Done ✓ — Continue →'}
+              </button>
 
-              <ManualCard title="MANUAL STEP: Upload to ElevenLabs Platform (alternative)">
+              <ManualCard title="MANUAL STEP: Generate in ElevenLabs + Upload to HeyGen">
                 <ManualStep n={1}>Go to <strong>elevenlabs.io</strong> → Text to Speech</ManualStep>
-                <ManualStep n={2}>Select your cloned voice from the voice list</ManualStep>
-                <ManualStep n={3}>Paste the script text above into the input field</ManualStep>
-                <ManualStep n={4}>Choose <strong>Multilingual v2</strong> or v3 model</ManualStep>
-                <ManualStep n={5}>Click Generate → Download the MP3</ManualStep>
-                <ManualStep n={6}>Name the file: <strong>{topic.title.replace(/[^a-z0-9]/gi, '_').slice(0, 30)}.mp3</strong></ManualStep>
+                <ManualStep n={2}>Select your personal cloned voice</ManualStep>
+                <ManualStep n={3}>Paste the copied text above</ManualStep>
+                <ManualStep n={4}>Set model to <strong>Multilingual v2</strong>, generate &amp; download MP3</ManualStep>
+                <ManualStep n={5}>Name the file: <strong>{topic.title.replace(/[^a-z0-9]/gi, '_').slice(0, 30)}.mp3</strong></ManualStep>
               </ManualCard>
             </div>
           )}
