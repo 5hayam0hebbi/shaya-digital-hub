@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { fetchTopics, upsertTopic, deleteTopic, fetchTopicContent, saveContent } from "./api.js";
 
 // ─── BRAND ────────────────────────────────────────────────────────────────────
 const BRAND = {
@@ -630,7 +631,9 @@ function GenSection({
   masterScript, masterVersion,
   elScript, elVersion,
   onMasterGenerated, onElGenerated,
-  onAppendInstruction,           // (rule: string) => void  — adds to global instructions
+  onAppendInstruction,
+  initialOut,      // content loaded from Supabase
+  onContentSaved,  // (content, elVer) => void
 }) {
   const [out, setOut]               = useState("");
   const [loading, setLoading]       = useState(false);
@@ -640,7 +643,17 @@ function GenSection({
   const [draft, setDraft]           = useState("");
   const [copied, setCopied]         = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
-  const [elVoiceVer, setElVoiceVer] = useState("v3"); // ElevenLabs version selector
+  const [elVoiceVer, setElVoiceVer] = useState("v3");
+
+  // Initialise from Supabase-saved content when topic opens
+  useEffect(() => {
+    if (initialOut && !out) {
+      setOut(initialOut);
+      setOpen(false);
+      setGenMeta({ date: "Saved", instructionsSnapshot: instructions, sourceVersion: 0 });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialOut]);
 
   // ── Feedback flow state
   const [fbOpen, setFbOpen]         = useState(false);
@@ -684,6 +697,7 @@ function GenSection({
     setGenMeta({ date: dateStr, instructionsSnapshot: instructions, sourceVersion, elVer: isElSection ? elVoiceVer : undefined });
     if (isMaster)    onMasterGenerated?.(full, masterVersion + 1);
     if (isElSection) onElGenerated?.(full, elVersion + 1);
+    onContentSaved?.(full, isElSection ? elVoiceVer : undefined);
     setLoading(false);
   };
 
@@ -699,6 +713,7 @@ function GenSection({
     if (isMaster)    onMasterGenerated?.(saved, masterVersion + 1);
     if (isElSection) onElGenerated?.(saved, elVersion + 1);
     setGenMeta(m => m ? { ...m, sourceVersion } : m);
+    onContentSaved?.(saved, undefined);
   };
 
   // ── Copy
@@ -1176,6 +1191,23 @@ function TopicDetail({topic,format,catName,onBack,onStageChange,onDelete,onEdit,
     setEl({ text, version: nextVersion });
   }, [setEl]);
 
+  // ── Supabase: load saved content when topic opens
+  const [savedContent, setSavedContent] = useState({});
+  useEffect(() => {
+    setSavedContent({});
+    fetchTopicContent(topic.id).then(rows => {
+      const map = {};
+      rows.forEach(r => { map[`${r.format}_${r.section_key}`] = r; });
+      setSavedContent(map);
+    });
+  }, [topic.id]);
+
+  const handleContentSaved = useCallback((format, sectionKey, content, elVer) => {
+    saveContent(topic.id, { format, sectionKey, content, elVersion: elVer }).then(saved => {
+      if (saved) setSavedContent(prev => ({ ...prev, [`${format}_${sectionKey}`]: saved }));
+    });
+  }, [topic.id]);
+
   return(
     <div>
       <button onClick={onBack} style={{display:"inline-flex",alignItems:"center",gap:6,
@@ -1292,6 +1324,8 @@ function TopicDetail({topic,format,catName,onBack,onStageChange,onDelete,onEdit,
                 onMasterGenerated={handleMasterGenerated}
                 onElGenerated={handleElGenerated}
                 onAppendInstruction={onAppendInstruction}
+                initialOut={savedContent[`${tab}_${sec.key}`]?.content || ""}
+                onContentSaved={(content, elVer) => handleContentSaved(tab, sec.key, content, elVer)}
               />
             </div>
           );
@@ -1731,14 +1765,24 @@ function CategoryView({catName,type,topics,onBack,onTopicsChange,instructions,on
   const [deleteId,setDeleteId]=useState(null); // inline delete confirm
   const cc=CAT_CONFIG[catName]||{accent:"#534AB7",light:"#EEEDFE",icon:"ti-video"};
 
-  const update=t=>onTopicsChange(topics.map(x=>x.id===t.id?t:x));
-  const del=id=>{onTopicsChange(topics.filter(t=>t.id!==id));if(selected?.id===id)setSelected(null);};
-  const add=t=>onTopicsChange([...topics,t]);
+  const update=t=>{
+    onTopicsChange(topics.map(x=>x.id===t.id?t:x));
+    upsertTopic(t, type, catName);
+  };
+  const del=id=>{
+    onTopicsChange(topics.filter(t=>t.id!==id));
+    if(selected?.id===id)setSelected(null);
+    deleteTopic(id);
+  };
+  const add=t=>{
+    onTopicsChange([...topics,t]);
+    upsertTopic(t, type, catName);
+  };
   const save=t=>{
     const targetCat = (t.category||"").trim() || catName;
     if(targetCat !== catName) {
-      // New or different category — delegate up to parent
       onNewCategory?.(targetCat, t);
+      upsertTopic(t, type, targetCat);
       setModal(null);
       return;
     }
@@ -2134,6 +2178,21 @@ export default function App(){
   const [long,setLong]=useState(LONG_TOPICS);
   const [instructions,setInstructions]=useState(DEFAULT_INSTRUCTIONS);
   const [showInstr,setShowInstr]=useState(false);
+
+  // Load persisted topics from Supabase on mount — overrides hardcoded defaults
+  useEffect(() => {
+    fetchTopics().then(rows => {
+      if (!rows.length) return;
+      const s={}, l={};
+      rows.forEach(t => {
+        const target = t.format==="short" ? s : l;
+        if(!target[t.category]) target[t.category]=[];
+        target[t.category].push(t);
+      });
+      if(Object.keys(s).length) setShort(s);
+      if(Object.keys(l).length) setLong(l);
+    });
+  }, []);
 
   const data    =tab==="short"?short:long;
   const setData =tab==="short"?setShort:setLong;
